@@ -3,12 +3,15 @@
 #include <math.h>
 // modified from: https://docs.gtk.org/gtk3/getting_started.html#custom-drawing
 // gcc -Wall -Wextra `pkg-config --cflags gtk+-3.0` -o drawing example.c `pkg-config --libs gtk+-3.0`
+// When running on the PineNote, make sure to activate the spliting option (as root):
+// # echo 20 > /sys/module/rockchip_ebc/parameters/split_area_limit
 
 /* Surface to store current scribbles */
 static cairo_surface_t *surface = NULL;
 GtkWidget *drawing_area;
 gdouble last_x = -1;
 gdouble last_y = -1;
+
 // cache the last actually blitted region and do nothing if this repeats
 gdouble last_drawn_x, last_drawn_y;
 gdouble auto_x, auto_y;
@@ -34,7 +37,8 @@ clear_surface (void)
 	cr = cairo_create (surface);
 
 	cairo_set_source_rgb (cr, 1, 1, 1);
-	cairo_paint (cr);
+	cairo_paint(cr);
+	print_extent(cr);
 
 	cairo_destroy (cr);
 }
@@ -75,18 +79,6 @@ static gboolean draw_cb (
 		return FALSE;
   	cairo_set_source_surface (cr, surface, 0, 0);
 
-  /* int last_x = 50; */
-  /* int last_y = 20; */
-
-  /* cairo_reset_clip(cr); */
-  /* cairo_new_path(cr); */
-  /* printf("last x/y: %f/%f\n", last_x, last_y); */
-  /* cairo_move_to(cr, last_x+3, last_y-3); */
-  /* cairo_line_to(cr, last_x-3, last_y-3); */
-  /* cairo_line_to(cr, last_x-3, last_y+3); */
-  /* cairo_line_to(cr, last_x+3, last_y+3); */
-  /* cairo_close_path(cr); */
-  /* cairo_clip(cr); */
 	/* print_extent(cr); */
 	cairo_paint (cr);
 
@@ -107,14 +99,15 @@ draw_brush (GtkWidget *widget,
 
   	if ((last_x == -1) || (last_y == -1)){
 		// only draw a square when we start drawing
-  		/* gtk_widget_queue_draw_area (widget, x - w_x, y - w_y, w_x * 2, w_y * 2); */
-  		/* cr = cairo_create (surface); */
-  		/* cairo_rectangle (cr, x - w_x, y - w_y, w_x * 2, w_y * 2); */
-  		/* cairo_destroy (cr); */
+  		gtk_widget_queue_draw_area (widget, x - w_x, y - w_y, w_x * 2, w_y * 2);
+  		cr = cairo_create (surface);
+		cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+  		cairo_rectangle (cr, x - w_x, y - w_y, w_x * 2, w_y * 2);
+  		cairo_destroy (cr);
 
 		last_x = x;
 		last_y = y;
-		/* gtk_widget_queue_draw_area (widget, x - w_x, y - w_y, w_x * 2, w_y * 2); */
+		gtk_widget_queue_draw_area (widget, x - w_x, y - w_y, w_x * 2, w_y * 2);
 		return;
 	}
 
@@ -126,7 +119,9 @@ draw_brush (GtkWidget *widget,
 	);
 	/* printf("Length: %f\n", length); */
 
-	if (length < 1){
+	// only draw a line if its length is greater than the threshold
+	double threshold = 3;
+	if (length < threshold){
 		return;
 	}
 
@@ -134,14 +129,16 @@ draw_brush (GtkWidget *widget,
 	cr = cairo_create (surface);
 	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 
-	cairo_antialias_t caa_status;
-	caa_status = cairo_get_antialias (cr);
-	printf("CAA: %i\n", caa_status);
+	// print AA status
+	// https://cairographics.org/manual/cairo-cairo-t.html#cairo-antialias-t
+	/* cairo_antialias_t caa_status; */
+	/* caa_status = cairo_get_antialias (cr); */
+	/* printf("CAA: %i\n", caa_status); */
 
 	double xmin = fmin(last_x, x);
 	double ymin = fmin(last_y, y);
-	double xmax = fmax(last_x, x);
-	double ymax = fmax(last_y, y);
+	/* double xmax = fmax(last_x, x); */
+	/* double ymax = fmax(last_y, y); */
 
 	// draw a line between the last coordinates and this one
 	cairo_set_source_rgb (cr, 0, 0, 0);
@@ -183,12 +180,15 @@ draw_brush (GtkWidget *widget,
 	/* 	ymax - ymin */
 	/* ); */
 
+	// this call invalidates a certain region of the drawing area
+	// basically, this translates to the damage area provided to the ebc driver
+	// and should be kept as small as possible
 	gtk_widget_queue_draw_area (
 		widget,
-		floor(xmin - brush_width),
-		floor(ymin - brush_width),
-		ceil(fabs(last_x - x) + brush_width),
-		ceil(fabs(last_y - y) + brush_width)
+		floor(xmin - brush_width * 1),
+		floor(ymin - brush_width * 1),
+		ceil(fabs(last_x - x) + brush_width * 1),
+		ceil(fabs(last_y - y) + brush_width * 1)
 	);
 
 	last_x = x;
@@ -240,7 +240,8 @@ static gboolean button_release_event_cb(
 	   	__attribute__ ((unused)) gpointer data
 		)
 {
-	printf("Button release event\n");
+	/* printf("Button release event\n"); */
+	// reset the last coordinate variables
 	last_x = -1;
 	last_y = -1;
 	return TRUE;
@@ -312,27 +313,13 @@ activate (GtkApplication *app,
 	GtkWidget *btn_clear;
 
 	window = gtk_application_window_new (app);
-	// hide cursor startnew(GDK_BLANK_CURSOR);
-
-	// GdkCursor* Cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	// hide cursor
 	GdkDisplay * display = gdk_display_get_default();
 	GdkCursor* Cursor = gdk_cursor_new_for_display(
-		  display, GDK_BLANK_CURSOR);
-
-  // hide cursor end
-
-  /*
-  // GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
-GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
-
-	gdk_device_grab (
-		pointer,
-	       	win,
-	       	GDK_OWNERSHIP_NONE, TRUE,
-	        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK,
-	        Cursor,
-	       	GDK_CURRENT_TIME);
-		*/
+		  display,
+		  GDK_BLANK_CURSOR
+	 );
+  	// hide cursor end
 
 	gtk_window_set_title (GTK_WINDOW (window), "Drawing Area");
 
@@ -345,8 +332,6 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 	gtk_container_add (GTK_CONTAINER (window), grid);
 
 	frame = gtk_frame_new (NULL);
-	/* gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_IN); */
-	/* gtk_container_add (GTK_CONTAINER (window), frame); */
 
 	drawing_area = gtk_drawing_area_new ();
 	gtk_widget_set_hexpand(drawing_area, TRUE);
@@ -424,7 +409,7 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 	GdkSeat* seat = gdk_display_get_default_seat(display);
 	GdkSeatCapabilities caps;
   	caps = gdk_seat_get_capabilities(seat);
-  	printf("Capabitlities: %i\n", caps);
+  	printf("Capabilities: %i\n", caps);
 
 	GList * seat_list;
 	seat_list = gdk_display_list_seats(display);
