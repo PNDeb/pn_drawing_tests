@@ -182,7 +182,7 @@ int keep_drawing(){
 	// printf("keep drawing\n");
 	struct timespec time_now;
 
-    	clock_gettime(CLOCK_MONOTONIC, &time_now);
+	clock_gettime(CLOCK_MONOTONIC, &time_now);
 	// printf("last: %lu %lu\n", time_last_call.tv_sec, time_last_call.tv_nsec);
 	// printf("now: %lu %lu\n", time_now.tv_sec, time_now.tv_nsec);
 	static unsigned int nsec = 1000000000;
@@ -200,20 +200,20 @@ int keep_drawing(){
 }
 
 int draw_loop(){
-  int res;
-  struct timespec ts;
+	int res;
+	struct timespec ts;
 
-  ts.tv_sec = 1;
-  ts.tv_nsec = 50 * 100000;
+	ts.tv_sec = 1;
+	ts.tv_nsec = 50 * 100000;
 
-  while (1){
-	  printf("Loop\n");
-	draw_brush(drawing_area, auto_x, auto_y);
-	auto_x++;
-	  res = nanosleep(&ts, &ts);
+	while (1){
+	  	printf("Loop\n");
+		draw_brush(drawing_area, auto_x, auto_y);
+		auto_x++;
+		res = nanosleep(&ts, &ts);
 
-  }
-  return G_SOURCE_REMOVE;
+	}
+	return G_SOURCE_REMOVE;
 }
 
 /* Handle button press events by either drawing a rectangle
@@ -226,22 +226,22 @@ button_press_event_cb (GtkWidget      *widget,
                        GdkEventButton *event,
                        gpointer        data)
 {
-  /* paranoia check, in case we haven't gotten a configure event */
-  if (surface == NULL)
-    return FALSE;
+	/* paranoia check, in case we haven't gotten a configure event */
+	if (surface == NULL)
+		return FALSE;
 
-  if (event->button == GDK_BUTTON_PRIMARY)
-    {
-      draw_brush (widget, event->x, event->y);
-    }
-  else if (event->button == GDK_BUTTON_SECONDARY)
-    {
-      clear_surface ();
-      gtk_widget_queue_draw (widget);
-    }
+	if (event->button == GDK_BUTTON_PRIMARY)
+	{
+	  	draw_brush (widget, event->x, event->y);
+	}
+	else if (event->button == GDK_BUTTON_SECONDARY)
+	{
+		clear_surface ();
+		gtk_widget_queue_draw (widget);
+	}
 
-  /* We've handled the event, stop processing */
-  return TRUE;
+	/* We've handled the event, stop processing */
+	return TRUE;
 }
 
 /* Handle motion events by continuing to draw if button 1 is
@@ -253,37 +253,37 @@ motion_notify_event_cb (GtkWidget      *widget,
                         GdkEventMotion *event,
                         gpointer        data)
 {
-  /* paranoia check, in case we haven't gotten a configure event */
-  if (surface == NULL)
-    return FALSE;
+	/* paranoia check, in case we haven't gotten a configure event */
+	if (surface == NULL)
+		return FALSE;
 
-  if (event->state & GDK_BUTTON1_MASK)
-    draw_brush (widget, event->x, event->y);
+  	if (event->state & GDK_BUTTON1_MASK)
+    	draw_brush (widget, event->x, event->y);
 
-  /* We've handled it, stop processing */
-  return TRUE;
+	/* We've handled it, stop processing */
+	return TRUE;
 }
 
 static void
 close_window (void)
 {
-  if (surface)
-    cairo_surface_destroy (surface);
+	if (surface)
+		cairo_surface_destroy (surface);
 }
 
 static void
 activate (GtkApplication *app,
           gpointer        user_data)
 {
-  GtkWidget *window;
-  GtkWidget *frame;
+	GtkWidget *window;
+	GtkWidget *frame;
 
-  window = gtk_application_window_new (app);
-  // hide cursor startnew(GDK_BLANK_CURSOR);
+	window = gtk_application_window_new (app);
+	// hide cursor startnew(GDK_BLANK_CURSOR);
 
-  // GdkCursor* Cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
-  GdkDisplay * display = gdk_display_get_default();
-  GdkCursor* Cursor = gdk_cursor_new_for_display(
+	// GdkCursor* Cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+	GdkDisplay * display = gdk_display_get_default();
+	GdkCursor* Cursor = gdk_cursor_new_for_display(
 		  display, GDK_BLANK_CURSOR);
 
   // hide cursor end
@@ -301,84 +301,86 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 	       	GDK_CURRENT_TIME);
 		*/
 
-  gtk_window_set_title (GTK_WINDOW (window), "Drawing Area");
+	gtk_window_set_title (GTK_WINDOW (window), "Drawing Area");
 
-  g_signal_connect (window, "destroy", G_CALLBACK (close_window), NULL);
+	g_signal_connect (window, "destroy", G_CALLBACK (close_window), NULL);
 
-  gtk_container_set_border_width (GTK_CONTAINER (window), 8);
+	gtk_container_set_border_width (GTK_CONTAINER (window), 8);
 
-  frame = gtk_frame_new (NULL);
-  gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_IN);
-  gtk_container_add (GTK_CONTAINER (window), frame);
+	frame = gtk_frame_new (NULL);
+	gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_IN);
+	gtk_container_add (GTK_CONTAINER (window), frame);
 
-  drawing_area = gtk_drawing_area_new ();
+	drawing_area = gtk_drawing_area_new ();
 
-  /* set a minimum size */
-  gtk_widget_set_size_request (drawing_area, 100, 100);
+	/* set a minimum size */
+	gtk_widget_set_size_request (drawing_area, 100, 100);
 
-  gtk_container_add (GTK_CONTAINER (frame), drawing_area);
+	gtk_container_add (GTK_CONTAINER (frame), drawing_area);
 
-  /* Signals used to handle the backing surface */
-  g_signal_connect (drawing_area, "draw",
-                    G_CALLBACK (draw_cb), NULL);
-  g_signal_connect (drawing_area,"configure-event",
-                    G_CALLBACK (configure_event_cb), NULL);
+	/* Signals used to handle the backing surface */
+	g_signal_connect (drawing_area, "draw",
+					G_CALLBACK (draw_cb), NULL);
+	g_signal_connect (drawing_area,"configure-event",
+					G_CALLBACK (configure_event_cb), NULL);
 
-  /* Event signals */
-  g_signal_connect (drawing_area, "motion-notify-event",
-                    G_CALLBACK (motion_notify_event_cb), NULL);
-  g_signal_connect (drawing_area, "button-press-event",
-                    G_CALLBACK (button_press_event_cb), NULL);
+	/* Event signals */
+	g_signal_connect(
+		drawing_area, "motion-notify-event",
+		G_CALLBACK (motion_notify_event_cb),
+	   	NULL
+	);
+	g_signal_connect(
+		drawing_area,
+	   	"button-press-event",
+		G_CALLBACK (button_press_event_cb),
+	   	NULL
+	);
 
-  /* Ask to receive events the drawing area doesn't normally
-   * subscribe to. In particular, we need to ask for the
-   * button press and motion notify events that want to handle.
-   */
-  gtk_widget_set_events (drawing_area, gtk_widget_get_events (drawing_area)
+	/* Ask to receive events the drawing area doesn't normally
+	* subscribe to. In particular, we need to ask for the
+	* button press and motion notify events that want to handle.
+	*/
+  	gtk_widget_set_events(
+		drawing_area,
+	   	gtk_widget_get_events (drawing_area)
                                      | GDK_BUTTON_PRESS_MASK
-                                     | GDK_POINTER_MOTION_MASK);
+                                     | GDK_POINTER_MOTION_MASK
+	);
 
-  gtk_widget_show_all (window);
+  	gtk_widget_show_all (window);
 
-  GdkWindow* win = gtk_widget_get_window(window);
-  if (win == NULL){
-	  printf("WINDOW IS NULL\n");
+	GdkWindow* win = gtk_widget_get_window(window);
+	if (win == NULL){
+	  	printf("WINDOW IS NULL\n");
+	}
+  	gdk_window_set_cursor(win, Cursor);
 
-  }
-  gdk_window_set_cursor(win, Cursor);
+	GdkSeat* seat = gdk_display_get_default_seat(display);
+	GdkSeatCapabilities caps;
+  	caps = gdk_seat_get_capabilities(seat);
+  	printf("Capabitlities: %i\n", caps);
 
-  GdkSeat* seat = gdk_display_get_default_seat(display);
-  GdkSeatCapabilities caps;
-  caps = gdk_seat_get_capabilities(seat);
-  printf("Capabitlities: %i\n", caps);
+	GList * seat_list;
+	seat_list = gdk_display_list_seats(display);
+	printf("Number of seats: %i\n", g_list_length(seat_list));
 
-
-
-  GList * seat_list;
-  seat_list = gdk_display_list_seats(display);
-  printf("Number fo seats: %i\n",
-		  g_list_length(seat_list)
-		 );
-
-  GdkGrabStatus status;
-  status = gdk_seat_grab(
-	seat,
-	win,
-	// GDK_SEAT_CAPABILITY_ALL_POINTING,
-	GDK_SEAT_CAPABILITY_TABLET_STYLUS,
-	TRUE,
-	Cursor,
-	NULL,
-	NULL,
-	NULL
-   );
-  if (status == GDK_GRAB_SUCCESS){
-	printf("GRAb successful!\n");
-  }
-	else
-	printf("GRAb NOT successful!: %i\n", status);
-
-
+	GdkGrabStatus status;
+	status = gdk_seat_grab(
+		seat,
+		win,
+		// GDK_SEAT_CAPABILITY_ALL_POINTING,
+		GDK_SEAT_CAPABILITY_TABLET_STYLUS,
+		TRUE,
+		Cursor,
+		NULL,
+		NULL,
+		NULL
+	);
+	if (status == GDK_GRAB_SUCCESS){
+		printf("Grab successful!\n");
+	} else
+		printf("Grab NOT successful!: %i\n", status);
 
     clock_gettime(CLOCK_MONOTONIC, &time_last_call);
 
@@ -391,18 +393,19 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 
 }
 
-int
-main (int    argc,
-      char **argv)
+int main (int argc, char **argv)
 {
-  GtkApplication *app;
-  int status;
+	GtkApplication *app;
+	int status;
 
-  app = gtk_application_new ("org.gtk.example", G_APPLICATION_DEFAULT_FLAGS);
-  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-  status = g_application_run (G_APPLICATION (app), argc, argv);
-  g_object_unref (app);
+	app = gtk_application_new(
+			"org.pinenote.drawing",
+		   	G_APPLICATION_DEFAULT_FLAGS
+	);
+	g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
+	status = g_application_run (G_APPLICATION (app), argc, argv);
+	g_object_unref (app);
 
-  return status;
+	return status;
 }
 
