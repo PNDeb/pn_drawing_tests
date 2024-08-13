@@ -22,7 +22,7 @@ const int w_y = 2;
 static void print_extent(cairo_t *cr){
 	double x1, y1, x2, y2;
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
-	printf("clip extents: (%f-%f) (%f-%f)\n", x1, x2, y1, y2);
+	printf("clip extents: (%.1f - %.1f) (%.1f - %.1f)\n", x1, x2, y1, y2);
 }
 
 
@@ -132,6 +132,11 @@ draw_brush (GtkWidget *widget,
 
 	/* Paint to the surface, where we store our state */
 	cr = cairo_create (surface);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+
+	cairo_antialias_t caa_status;
+	caa_status = cairo_get_antialias (cr);
+	printf("CAA: %i\n", caa_status);
 
 	double xmin = fmin(last_x, x);
 	double ymin = fmin(last_y, y);
@@ -157,24 +162,31 @@ draw_brush (GtkWidget *widget,
 	/* 	fabs(last_y - y) + brush_width */
 	/* ); */
 	/* Now invalidate the affected region of the drawing area. */
-	double offset_x;
-	if (last_x >= x){
-		offset_x = brush_width / 1.0;
-	} else {
-		offset_x = -brush_width / 1.0;
-	}
+	/* double offset_x; */
+	/* if (last_x >= x){ */
+	/* 	offset_x = brush_width / 1.0; */
+	/* } else { */
+	/* 	offset_x = -brush_width / 1.0; */
+	/* } */
 
-	double offset_y;
-	if (last_y >= y){
-		offset_y = brush_width / 1.0;
-	} else {
-		offset_y = -brush_width / 1.0;
-	}
+	/* double offset_y; */
+	/* if (last_y >= y){ */
+	/* 	offset_y = brush_width / 1.0; */
+	/* } else { */
+	/* 	offset_y = -brush_width / 1.0; */
+	/* } */
+
+	/* printf("    check: %f %f vs %f %f\n", */
+	/* 	ceil(fabs(last_x - x) + brush_width), */
+	/* 	ceil(fabs(last_y - y) + brush_width), */
+	/* 	xmax - xmin, */
+	/* 	ymax - ymin */
+	/* ); */
 
 	gtk_widget_queue_draw_area (
 		widget,
 		floor(xmin - brush_width),
-		floor(ymin + brush_width),
+		floor(ymin - brush_width),
 		ceil(fabs(last_x - x) + brush_width),
 		ceil(fabs(last_y - y) + brush_width)
 	);
