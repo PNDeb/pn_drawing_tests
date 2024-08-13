@@ -42,8 +42,8 @@ clear_surface (void)
 /* Create a new surface of the appropriate size to store our scribbles */
 static gboolean
 configure_event_cb (GtkWidget         *widget,
-                    GdkEventConfigure *event,
-                    gpointer           data)
+                    __attribute__ ((unused)) GdkEventConfigure *event,
+                    __attribute__ ((unused)) gpointer           data)
 {
  	if (surface)
     	cairo_surface_destroy (surface);
@@ -66,10 +66,10 @@ configure_event_cb (GtkWidget         *widget,
  * signal receives a ready-to-be-used cairo_t that is already
  * clipped to only draw the exposed areas of the widget
  */
-static gboolean
-draw_cb (GtkWidget *widget,
-         cairo_t   *cr,
-         gpointer   data)
+static gboolean draw_cb (
+		__attribute__ ((unused)) GtkWidget *widget,
+        cairo_t   *cr,
+        __attribute__ ((unused)) gpointer   data)
 {
 	if ((last_x == last_drawn_x) && (last_y == last_drawn_y))
 		return FALSE;
@@ -87,7 +87,7 @@ draw_cb (GtkWidget *widget,
   /* cairo_line_to(cr, last_x+3, last_y+3); */
   /* cairo_close_path(cr); */
   /* cairo_clip(cr); */
-	print_extent(cr);
+	/* print_extent(cr); */
 	cairo_paint (cr);
 
 	last_drawn_x = last_x;
@@ -118,13 +118,13 @@ draw_brush (GtkWidget *widget,
 		return;
 	}
 
-	printf("-------------------------\n");
+	/* printf("-------------------------\n"); */
 	// we only draw above a certain length
 	double length;
 	length = sqrt(
 		pow((x - last_x), 2) + pow((y - last_y), 2)
 	);
-	printf("Length: %f\n", length);
+	/* printf("Length: %f\n", length); */
 
 	if (length < 1){
 		return;
@@ -136,7 +136,7 @@ draw_brush (GtkWidget *widget,
 	cairo_set_source_rgb (cr, 0, 0, 0);
 	cairo_move_to (cr, last_x, last_y);
 	cairo_line_to (cr, x, y);
-	printf("Line from (%.2f/%.2f) to (%.2f/%.2f)\n", last_x, last_y, x, y);
+	/* printf("Line from (%.2f/%.2f) to (%.2f/%.2f)\n", last_x, last_y, x, y); */
 	cairo_set_line_width (cr, brush_width);
 	cairo_stroke(cr);
 
@@ -200,7 +200,6 @@ int keep_drawing(){
 }
 
 int draw_loop(){
-	int res;
 	struct timespec ts;
 
 	ts.tv_sec = 1;
@@ -210,10 +209,23 @@ int draw_loop(){
 	  	printf("Loop\n");
 		draw_brush(drawing_area, auto_x, auto_y);
 		auto_x++;
-		res = nanosleep(&ts, &ts);
+		nanosleep(&ts, &ts);
 
 	}
 	return G_SOURCE_REMOVE;
+}
+
+
+static gboolean button_release_event_cb(
+		__attribute__ ((unused)) GtkWidget *widget,
+		__attribute__ ((unused)) GdkEventButton *event,
+	   	__attribute__ ((unused)) gpointer data
+		)
+{
+	printf("Button release event\n");
+	last_x = -1;
+	last_y = -1;
+	return TRUE;
 }
 
 /* Handle button press events by either drawing a rectangle
@@ -221,10 +233,11 @@ int draw_loop(){
  * The ::button-press signal handler receives a GdkEventButton
  * struct which contains this information.
  */
-static gboolean
-button_press_event_cb (GtkWidget      *widget,
-                       GdkEventButton *event,
-                       gpointer        data)
+static gboolean button_press_event_cb(
+		GtkWidget *widget,
+		GdkEventButton *event,
+	   	__attribute__ ((unused)) gpointer data
+		)
 {
 	/* paranoia check, in case we haven't gotten a configure event */
 	if (surface == NULL)
@@ -251,7 +264,7 @@ button_press_event_cb (GtkWidget      *widget,
 static gboolean
 motion_notify_event_cb (GtkWidget      *widget,
                         GdkEventMotion *event,
-                        gpointer        data)
+                        __attribute__ ((unused)) gpointer        data)
 {
 	/* paranoia check, in case we haven't gotten a configure event */
 	if (surface == NULL)
@@ -273,7 +286,7 @@ close_window (void)
 
 static void
 activate (GtkApplication *app,
-          gpointer        user_data)
+          __attribute__ ((unused)) gpointer        user_data)
 {
 	GtkWidget *window;
 	GtkWidget *frame;
@@ -319,14 +332,18 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 	gtk_container_add (GTK_CONTAINER (frame), drawing_area);
 
 	/* Signals used to handle the backing surface */
-	g_signal_connect (drawing_area, "draw",
-					G_CALLBACK (draw_cb), NULL);
+	g_signal_connect(
+		drawing_area, "draw",
+		G_CALLBACK (draw_cb),
+	   	NULL
+	);
 	g_signal_connect (drawing_area,"configure-event",
 					G_CALLBACK (configure_event_cb), NULL);
 
 	/* Event signals */
 	g_signal_connect(
-		drawing_area, "motion-notify-event",
+		drawing_area,
+	   	"motion-notify-event",
 		G_CALLBACK (motion_notify_event_cb),
 	   	NULL
 	);
@@ -334,6 +351,12 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 		drawing_area,
 	   	"button-press-event",
 		G_CALLBACK (button_press_event_cb),
+	   	NULL
+	);
+	g_signal_connect(
+		drawing_area,
+	   	"button-release-event",
+		G_CALLBACK (button_release_event_cb),
 	   	NULL
 	);
 
@@ -345,6 +368,7 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 		drawing_area,
 	   	gtk_widget_get_events (drawing_area)
                                      | GDK_BUTTON_PRESS_MASK
+                                     | GDK_BUTTON_RELEASE_MASK
                                      | GDK_POINTER_MOTION_MASK
 	);
 
