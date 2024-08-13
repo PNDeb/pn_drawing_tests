@@ -132,6 +132,12 @@ draw_brush (GtkWidget *widget,
 
 	/* Paint to the surface, where we store our state */
 	cr = cairo_create (surface);
+
+	double xmin = fmin(last_x, x);
+	double ymin = fmin(last_y, y);
+	double xmax = fmax(last_x, x);
+	double ymax = fmax(last_y, y);
+
 	// draw a line between the last coordinates and this one
 	cairo_set_source_rgb (cr, 0, 0, 0);
 	cairo_move_to (cr, last_x, last_y);
@@ -167,8 +173,8 @@ draw_brush (GtkWidget *widget,
 
 	gtk_widget_queue_draw_area (
 		widget,
-		floor(last_x + offset_x),
-		floor(last_y + offset_y),
+		floor(xmin - brush_width),
+		floor(ymin + brush_width),
 		ceil(fabs(last_x - x) + brush_width),
 		ceil(fabs(last_y - y) + brush_width)
 	);
