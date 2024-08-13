@@ -296,6 +296,8 @@ activate (GtkApplication *app,
 {
 	GtkWidget *window;
 	GtkWidget *frame;
+	GtkWidget *grid;
+	GtkWidget *btn_clear;
 
 	window = gtk_application_window_new (app);
 	// hide cursor startnew(GDK_BLANK_CURSOR);
@@ -326,16 +328,34 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 
 	gtk_container_set_border_width (GTK_CONTAINER (window), 8);
 
+	// the packing container
+	grid = gtk_grid_new();
+	gtk_container_add (GTK_CONTAINER (window), grid);
+
 	frame = gtk_frame_new (NULL);
-	gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_IN);
-	gtk_container_add (GTK_CONTAINER (window), frame);
+	/* gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_IN); */
+	/* gtk_container_add (GTK_CONTAINER (window), frame); */
 
 	drawing_area = gtk_drawing_area_new ();
-
-	/* set a minimum size */
-	gtk_widget_set_size_request (drawing_area, 100, 100);
+	gtk_widget_set_hexpand(drawing_area, TRUE);
+	gtk_widget_set_vexpand(drawing_area, TRUE);
 
 	gtk_container_add (GTK_CONTAINER (frame), drawing_area);
+    gtk_grid_attach (GTK_GRID (grid), frame, 0, 1, 1, 1);
+
+	/* set a minimum size */
+	gtk_widget_set_size_request(drawing_area, 100, 100);
+
+	/* clear button */
+	btn_clear = gtk_button_new_with_label("Clear area");
+    gtk_grid_attach (GTK_GRID (grid), btn_clear, 0, 0, 1, 1);
+
+	g_signal_connect(
+		btn_clear,
+		"clicked",
+		G_CALLBACK (clear_surface),
+		NULL
+	);
 
 	/* Signals used to handle the backing surface */
 	g_signal_connect(
@@ -343,8 +363,11 @@ GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 		G_CALLBACK (draw_cb),
 	   	NULL
 	);
-	g_signal_connect (drawing_area,"configure-event",
-					G_CALLBACK (configure_event_cb), NULL);
+	g_signal_connect(
+		drawing_area,"configure-event",
+		G_CALLBACK (configure_event_cb),
+	   	NULL
+	);
 
 	/* Event signals */
 	g_signal_connect(
